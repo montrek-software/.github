@@ -1,0 +1,93 @@
+name: Montrek TestSuite Template
+
+on:
+  workflow_call:
+    inputs:
+      montrek_base_version:
+        required: true
+        type: string
+      montrek_project:
+        required: true
+        type: string
+      mt_cloud_ref:
+        required: false
+        type: string
+        default: "" # empty means "don't clone"
+      mt_economic_common_ref:
+        required: false
+        type: string
+        default: "" # empty means "don't clone"
+    secrets:
+      PAT:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/montrek-software/montrek-container:latest
+      options: --user 0:0 # run job steps as root in CI
+    strategy:
+      max-parallel: 4
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_pipe_pssw
+          POSTGRES_DB: montrek_ci_pipe_db
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+
+    steps:
+      - name: Clone Montrek Repository
+        uses: actions/checkout@v4
+        with:
+          repository: chrishombach/montrek
+          token: ${{ secrets.PAT }}
+          path: ./montrek
+          ref: ${{ inputs.montrek_base_version }}
+      - name: Clone mt_cloud
+        if: inputs.mt_cloud_ref != ''
+        uses: actions/checkout@v4
+        with:
+          repository: montrek-software/mt_cloud
+          token: ${{ secrets.PAT }}
+          path: ./montrek/montrek/mt_cloud
+          ref: ${{ inputs.mt_cloud_ref }}
+      - name: Clone mt_economic_common
+        if: inputs.mt_economic_common_ref != ''
+        uses: actions/checkout@v4
+        with:
+          repository: montrek-software/mt_economic_common
+          token: ${{ secrets.PAT }}
+          path: ./montrek/montrek/mt_economic_common
+          ref: ${{ inputs.mt_economic_common_ref }}
+
+      - name: Checkout PR code or main
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: ./montrek/montrek/${{ inputs.montrek_project }}
+
+      - name: Install Python Dependencies
+        run: ./montrek/bin/sync-local-python-env.sh
+
+      - name: Setup env
+        run: |
+          ENVPATH="./montrek/.env"
+          echo "DB_ENGINE=postgres" >> $ENVPATH
+          echo "DB_PORT=5432" >> $ENVPATH
+          echo "DB_USER=postgres" >> $ENVPATH
+          echo "DB_PASSWORD=ci_pipe_pssw" >> $ENVPATH
+          echo "DB_NAME=montrek_ci_pipe_db" >> $ENVPATH
+          echo "DB_HOST=postgres" >> $ENVPATH
+          echo "SECRET_KEY=testkey" >> $ENVPATH
+
+      - name: Run Tests
+        run: |
+          . .venv/bin/activate
+          cd montrek/montrek
+          python manage.py test ${{ inputs.montrek_project }} --exclude-tag=functional --parallel
