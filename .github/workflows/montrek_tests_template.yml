@@ -17,6 +17,10 @@ on:
         required: false
         type: string
         default: "" # empty means "don't clone"
+      mt_tools_ref:
+        required: false
+        type: string
+        default: "" # empty means "don't clone"
     secrets:
       PAT:
         required: true
