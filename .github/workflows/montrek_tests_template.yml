@@ -85,7 +85,7 @@ jobs:
           path: ./montrek/montrek/${{ inputs.montrek_project }}
 
       - name: Install Python Dependencies
-        run: ./montrek/bin/sync-local-python-env.sh
+        run: cd montrek && make sync-local-python-env
 
       - name: Setup env
         run: |
