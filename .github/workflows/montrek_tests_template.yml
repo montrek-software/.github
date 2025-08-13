@@ -66,6 +66,14 @@ jobs:
           path: ./montrek/montrek/mt_economic_common
           ref: ${{ inputs.mt_economic_common_ref }}
 
+      - name: Clone mt_tools
+        if: inputs.mt_cloud_ref != ''
+        uses: actions/checkout@v4
+        with:
+          repository: montrek-software/mt_tools
+          token: ${{ secrets.PAT }}
+          path: ./montrek/montrek/mt_tools
+          ref: ${{ inputs.mt_tools_ref }}
       - name: Checkout PR code or main
         uses: actions/checkout@v3
         with:
