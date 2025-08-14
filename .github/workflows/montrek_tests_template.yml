@@ -112,6 +112,7 @@ jobs:
 
       - name: Run Tests
         run: |
+          cd montrek
           . .venv/bin/activate
-          cd montrek/montrek
+          cd montrek
           python manage.py test ${{ inputs.montrek_project }} --exclude-tag=functional --parallel
