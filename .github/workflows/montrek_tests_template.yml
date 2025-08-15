@@ -75,7 +75,7 @@ jobs:
           ref: ${{ inputs.mt_economic_common_ref }}
 
       - name: Clone mt_tools
-        if: inputs.mt_cloud_ref != ''
+        if: inputs.mt_tools_ref != ''
         uses: actions/checkout@v4
         with:
           repository: montrek-software/mt_tools
