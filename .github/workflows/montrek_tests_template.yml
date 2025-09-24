@@ -29,12 +29,83 @@ on:
       PAT:
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  decide:
+    name: Decide if tests should run
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+      reason: ${{ steps.decide.outputs.reason }}
+    steps:
+      - uses: actions/github-script@v7
+        id: decide
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // Get recent runs of THIS reusable workflow in the caller repo
+            const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner, repo, per_page: 50
+            });
+            const wfName = context.workflow; // "Montrek TestSuite Template"
+            const runs = data.workflow_runs.filter(r => r.name === wfName);
+            const currentId = context.runId;
+            const lastRun = runs.find(r => r.id !== currentId) || runs[0];
+            const lastConclusion = lastRun?.conclusion || 'none';
+            const lastSuccessAt = (runs.find(r => r.conclusion === 'success')?.updated_at) || '1970-01-01T00:00:00Z';
+
+            // Build dependency list from inputs (non-empty means "is a dependency")
+            const deps = [];
+            const org = "montrek-software";
+            const inps = context.payload.workflow_call?.inputs || {}; // safety; actions/github-script exposes inputs via process.env too
+
+            function maybe(depRepo, branch) {
+              if (branch && branch.trim() !== "") deps.push({ owner: org, repo: depRepo, branch: branch.trim() });
+            }
+
+            maybe("mt_cloud",             process.env.INPUT_MT_CLOUD_REF);
+            maybe("mt_economic_common",   process.env.INPUT_MT_ECONOMIC_COMMON_REF);
+            maybe("mt_tools",             process.env.INPUT_MT_TOOLS_REF);
+            maybe("mt_llm",               process.env.INPUT_MT_LLM_REF);
+
+            let depsChanged = false;
+            for (const d of deps) {
+              const commits = await github.rest.repos.listCommits({
+                owner: d.owner,
+                repo: d.repo,
+                sha: d.branch,
+                since: lastSuccessAt,
+                per_page: 1,
+              });
+              if ((commits.data?.length || 0) > 0) { depsChanged = true; break; }
+            }
+
+            const isSchedule = context.eventName === 'schedule';
+            const lastFailed = (lastConclusion && lastConclusion !== 'success');
+
+            // Always run for PR/push/workflow_dispatch; gate only on schedule
+            const shouldRun = isSchedule ? (depsChanged || lastFailed) : true;
+
+            core.info(`event=${context.eventName} depsChanged=${depsChanged} lastConclusion=${lastConclusion} lastSuccessAt=${lastSuccessAt} => shouldRun=${shouldRun}`);
+            core.setOutput('should_run', shouldRun ? 'true' : 'false');
+            core.setOutput('reason', isSchedule ? (depsChanged ? 'deps_changed' : (lastFailed ? 'last_failed' : 'quiet')) : 'direct_trigger')
+
   build:
+    name: Run Montrek tests
+    needs: decide
+    if: github.event_name != 'schedule' || needs.decide.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/montrek-software/montrek-container:latest
-      options: --user 0:0 # run job steps as root in CI
+      options: --user 0:0
     strategy:
       max-parallel: 4
 
@@ -57,6 +128,7 @@ jobs:
           token: ${{ secrets.PAT }}
           path: ./montrek
           ref: ${{ inputs.montrek_base_version }}
+
       - name: Clone mt_cloud
         if: inputs.mt_cloud_ref != ''
         uses: actions/checkout@v4
@@ -65,6 +137,7 @@ jobs:
           token: ${{ secrets.PAT }}
           path: ./montrek/montrek/mt_cloud
           ref: ${{ inputs.mt_cloud_ref }}
+
       - name: Clone mt_economic_common
         if: inputs.mt_economic_common_ref != ''
         uses: actions/checkout@v4
@@ -82,16 +155,18 @@ jobs:
           token: ${{ secrets.PAT }}
           path: ./montrek/montrek/mt_tools
           ref: ${{ inputs.mt_tools_ref }}
+
       - name: Clone mt_llm
         if: inputs.mt_llm_ref != ''
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
         with:
           repository: montrek-software/mt_llm
           token: ${{ secrets.PAT }}
           path: ./montrek/montrek/mt_llm
           ref: ${{ inputs.mt_llm_ref }}
+
       - name: Checkout PR code or main
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           path: ./montrek/montrek/${{ inputs.montrek_project }}
