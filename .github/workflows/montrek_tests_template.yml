@@ -71,6 +71,7 @@ jobs:
               if (branch && branch.trim() !== "") deps.push({ owner: org, repo: depRepo, branch: branch.trim() });
             }
 
+            maybe("montrek",             "main");
             maybe("mt_cloud",             process.env.INPUT_MT_CLOUD_REF);
             maybe("mt_economic_common",   process.env.INPUT_MT_ECONOMIC_COMMON_REF);
             maybe("mt_tools",             process.env.INPUT_MT_TOOLS_REF);
