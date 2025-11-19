@@ -51,26 +51,29 @@ jobs:
             const owner = context.repo.owner;
             const repo  = context.repo.repo;
 
-            // Get recent runs of THIS reusable workflow in the caller repo
+            //
+            // --- Determine last run info
+            //
             const { data } = await github.rest.actions.listWorkflowRunsForRepo({
               owner, repo, per_page: 50
             });
-            const wfName = context.workflow; // "Montrek TestSuite Template"
+            const wfName = context.workflow;
             const runs = data.workflow_runs.filter(r => r.name === wfName);
             const currentId = context.runId;
             const lastRun = runs.find(r => r.id !== currentId) || runs[0];
             const lastConclusion = lastRun?.conclusion || 'none';
-            const lastSuccessAt = (runs.find(r => r.conclusion === 'success')?.updated_at) || '1970-01-01T00:00:00Z';
             const lastRunAt = lastRun?.updated_at || '1970-01-01T00:00:00Z';
 
-
-            // Build dependency list from inputs (non-empty means "is a dependency")
-            const deps = [];
+            //
+            // --- Collect dependency repos
+            //
             const org = "montrek-software";
-            const inps = context.payload.workflow_call?.inputs || {}; // safety; actions/github-script exposes inputs via process.env too
+            const deps = [];
 
             function maybe(depRepo, branch) {
-              if (branch && branch.trim() !== "") deps.push({ owner: org, repo: depRepo, branch: branch.trim() });
+              if (branch && branch.trim() !== "") {
+                deps.push({ owner: org, repo: depRepo, branch: branch.trim() });
+              }
             }
 
             maybe("montrek",              process.env.INPUT_MONTREK_BASE_VERSION);
@@ -79,27 +82,54 @@ jobs:
             maybe("mt_tools",             process.env.INPUT_MT_TOOLS_REF);
             maybe("mt_llm",               process.env.INPUT_MT_LLM_REF);
 
+            //
+            // --- Check each dependency for changes
+            //
             let depsChanged = false;
+
             for (const d of deps) {
-              const commits = await github.rest.repos.listCommits({
-                owner: d.owner,
-                repo: d.repo,
-                sha: d.branch,
-                since: lastRunAt,
-                per_page: 1,
-              });
-              if ((commits.data?.length || 0) > 0) { depsChanged = true; break; }
+              try {
+                // 1) Get branch HEAD SHA
+                const ref = await github.rest.git.getRef({
+                  owner: d.owner,
+                  repo: d.repo,
+                  ref: `heads/${d.branch}`
+                });
+
+                const latestSha = ref.data.object.sha;
+
+                // 2) Get the commit timestamp
+                const commit = await github.rest.repos.getCommit({
+                  owner: d.owner,
+                  repo: d.repo,
+                  ref: latestSha
+                });
+
+                const commitTime = commit.data.commit.committer.date;
+
+                // 3) Compare timestamps
+                if (new Date(commitTime) > new Date(lastRunAt)) {
+                  depsChanged = true;
+                  break;
+                }
+              } catch (err) {
+                core.warning(`Failed checking dependency ${d.repo}/${d.branch}: ${err.message}`);
+              }
             }
 
             const isSchedule = context.eventName === 'schedule';
-            const lastFailed = (lastConclusion && lastConclusion !== 'success');
+            const lastFailed = lastConclusion !== 'success';
 
-            // Always run for PR/push/workflow_dispatch; gate only on schedule
             const shouldRun = isSchedule ? (depsChanged || lastFailed) : true;
 
-            core.info(`event=${context.eventName} depsChanged=${depsChanged} lastConclusion=${lastConclusion} lastSuccessAt=${lastSuccessAt} => shouldRun=${shouldRun}`);
+            core.info(`event=${context.eventName} depsChanged=${depsChanged} lastConclusion=${lastConclusion} lastRunAt=${lastRunAt} => shouldRun=${shouldRun}`);
+
             core.setOutput('should_run', shouldRun ? 'true' : 'false');
-            core.setOutput('reason', isSchedule ? (depsChanged ? 'deps_changed' : (lastFailed ? 'last_failed' : 'quiet')) : 'direct_trigger')
+            core.setOutput('reason',
+              isSchedule
+                ? (depsChanged ? 'deps_changed' : (lastFailed ? 'last_failed' : 'quiet'))
+                : 'direct_trigger'
+            );
 
   build:
     name: Run Montrek tests
