@@ -85,6 +85,14 @@ jobs:
             //
             // --- Check each dependency for changes
             //
+            core.info("Dependency inputs:");
+            core.info(`INPUT_MONTREK_BASE_VERSION='${process.env.INPUT_MONTREK_BASE_VERSION}'`);
+            core.info(`INPUT_MT_CLOUD_REF='${process.env.INPUT_MT_CLOUD_REF}'`);
+            core.info(`INPUT_MT_ECONOMIC_COMMON_REF='${process.env.INPUT_MT_ECONOMIC_COMMON_REF}'`);
+            core.info(`INPUT_MT_TOOLS_REF='${process.env.INPUT_MT_TOOLS_REF}'`);
+            core.info(`INPUT_MT_LLM_REF='${process.env.INPUT_MT_LLM_REF}'`);
+
+            core.info("Building deps list...");
             let depsChanged = false;
 
             for (const d of deps) {
@@ -122,6 +130,7 @@ jobs:
                 core.warning(`Failed checking dependency ${d.repo}/${d.branch}: ${err.message}`);
               }
             }
+            core.info(`deps = ${JSON.stringify(deps, null, 2)}`);
 
             const isSchedule = context.eventName === 'schedule';
             const lastFailed = lastConclusion !== 'success';
