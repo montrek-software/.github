@@ -76,17 +76,17 @@ jobs:
               }
             }
 
-            maybe("montrek",              "main");
+            maybe("montrek",              ${{ inputs.montrek_base_version }});
             maybe("mt_cloud",             core.getInput("mt_cloud_ref"));
             maybe("mt_economic_common",   "main");
             maybe("mt_tools",             core.getInput("mt_tools_ref"));
-            maybe("mt_llm",               ${{ inputs.mt_llm_ref }});
+            maybe("mt_llm",               "");
 
             //
             // --- Check each dependency for changes
             //
             core.info("Dependency inputs:");
-            core.info(`INPUT_MONTREK_BASE_VERSION='${core.getInput("montrek_base_version")}'`);
+            core.info(`INPUT_MONTREK_BASE_VERSION='${{ inputs.montrek_base_version }}'`);
             core.info(`INPUT_MT_CLOUD_REF='${core.getInput("mt_cloud_ref")}'`);
             core.info(`INPUT_MT_ECONOMIC_COMMON_REF='${core.getInput("mt_economic_common_ref")}'`);
             core.info(`INPUT_MT_TOOLS_REF='${core.getInput("mt_tools_ref")}'`);
