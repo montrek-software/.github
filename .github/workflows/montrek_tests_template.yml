@@ -106,6 +106,12 @@ jobs:
                 });
 
                 const commitTime = commit.data.commit.committer.date;
+                core.info(`Checking ${d.repo}/${d.branch}`);
+
+                core.info(` - latestSha: ${latestSha}`);
+                core.info(` - commitTime: ${commitTime}`);
+                core.info(` - lastRunAt: ${lastRunAt}`);
+                core.info(` - newer? ${new Date(commitTime) > new Date(lastRunAt)}`);
 
                 // 3) Compare timestamps
                 if (new Date(commitTime) > new Date(lastRunAt)) {
