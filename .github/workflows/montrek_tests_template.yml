@@ -86,11 +86,11 @@ jobs:
             // --- Check each dependency for changes
             //
             core.info("Dependency inputs:");
-            core.info(`INPUT_MONTREK_BASE_VERSION='${core.getInput("montrek_base_version"))}'`);
+            core.info(`INPUT_MONTREK_BASE_VERSION='${core.getInput("montrek_base_version")}'`);
             core.info(`INPUT_MT_CLOUD_REF='${core.getInput("mt_cloud_ref")}'`);
             core.info(`INPUT_MT_ECONOMIC_COMMON_REF='${core.getInput("mt_economic_common_ref")}'`);
             core.info(`INPUT_MT_TOOLS_REF='${core.getInput("mt_tools_ref")}'`);
-            core.info(`INPUT_MT_LLM_REF='${core.getInput("mt_llm_ref"))}'`);
+            core.info(`INPUT_MT_LLM_REF='${core.getInput("mt_llm_ref")}'`);
 
             core.info("Building deps list...");
             let depsChanged = false;
