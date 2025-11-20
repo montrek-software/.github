@@ -80,7 +80,7 @@ jobs:
             maybe("mt_cloud",             core.getInput("mt_cloud_ref"));
             maybe("mt_economic_common",   "main");
             maybe("mt_tools",             core.getInput("mt_tools_ref"));
-            maybe("mt_llm",               ${{ inputs.mt_llm_ref }};
+            maybe("mt_llm",               ${{ inputs.mt_llm_ref }});
 
             //
             // --- Check each dependency for changes
