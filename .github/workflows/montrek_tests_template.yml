@@ -76,11 +76,11 @@ jobs:
               }
             }
 
-            maybe("montrek",              ${{ inputs.montrek_base_version }});
-            maybe("mt_cloud",             core.getInput("mt_cloud_ref"));
+            maybe("montrek",              "main");
+            maybe("mt_cloud",             "main");
             maybe("mt_economic_common",   "main");
-            maybe("mt_tools",             core.getInput("mt_tools_ref"));
-            maybe("mt_llm",               "");
+            maybe("mt_tools",             "main");
+            maybe("mt_llm",               "main");
 
             //
             // --- Check each dependency for changes
