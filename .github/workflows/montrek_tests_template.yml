@@ -77,9 +77,9 @@ jobs:
             }
 
             maybe("montrek",              core.getInput("montrek_base_version"));
-            maybe("mt_cloud",             core.getInput("mt_cloud_ref");
-            maybe("mt_economic_common",   core.getInput("mt_economic_common_ref");
-            maybe("mt_tools",             core.getInput("mt_tools_ref");
+            maybe("mt_cloud",             core.getInput("mt_cloud_ref"));
+            maybe("mt_economic_common",   core.getInput("mt_economic_common_ref"));
+            maybe("mt_tools",             core.getInput("mt_tools_ref"));
             maybe("mt_llm",               core.getInput("mt_llm_ref"));
 
             //
