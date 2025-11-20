@@ -76,21 +76,21 @@ jobs:
               }
             }
 
-            maybe("montrek",              process.env.INPUT_MONTREK_BASE_VERSION);
-            maybe("mt_cloud",             process.env.INPUT_MT_CLOUD_REF);
-            maybe("mt_economic_common",   process.env.INPUT_MT_ECONOMIC_COMMON_REF);
-            maybe("mt_tools",             process.env.INPUT_MT_TOOLS_REF);
-            maybe("mt_llm",               process.env.INPUT_MT_LLM_REF);
+            maybe("montrek",              core.getInput("montrek_base_version"));
+            maybe("mt_cloud",             core.getInput("mt_cloud_ref");
+            maybe("mt_economic_common",   core.getInput("mt_economic_common_ref");
+            maybe("mt_tools",             core.getInput("mt_tools_ref");
+            maybe("mt_llm",               core.getInput("mt_llm_ref"));
 
             //
             // --- Check each dependency for changes
             //
             core.info("Dependency inputs:");
-            core.info(`INPUT_MONTREK_BASE_VERSION='${process.env.INPUT_MONTREK_BASE_VERSION}'`);
-            core.info(`INPUT_MT_CLOUD_REF='${process.env.INPUT_MT_CLOUD_REF}'`);
-            core.info(`INPUT_MT_ECONOMIC_COMMON_REF='${process.env.INPUT_MT_ECONOMIC_COMMON_REF}'`);
-            core.info(`INPUT_MT_TOOLS_REF='${process.env.INPUT_MT_TOOLS_REF}'`);
-            core.info(`INPUT_MT_LLM_REF='${process.env.INPUT_MT_LLM_REF}'`);
+            core.info(`INPUT_MONTREK_BASE_VERSION='${core.getInput("montrek_base_version"))}'`);
+            core.info(`INPUT_MT_CLOUD_REF='${core.getInput("mt_cloud_ref")}'`);
+            core.info(`INPUT_MT_ECONOMIC_COMMON_REF='${core.getInput("mt_economic_common_ref")}'`);
+            core.info(`INPUT_MT_TOOLS_REF='${core.getInput("mt_tools_ref")}'`);
+            core.info(`INPUT_MT_LLM_REF='${core.getInput("mt_llm_ref"))}'`);
 
             core.info("Building deps list...");
             let depsChanged = false;
