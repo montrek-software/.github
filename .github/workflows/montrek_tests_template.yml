@@ -25,6 +25,14 @@ on:
         required: false
         type: string
         default: "" # empty means "don't clone"
+      private_repo:
+        required: false
+        type: string
+        default: ""
+      private_ref:
+        required: false
+        type: string
+        default: ""
     secrets:
       PAT:
         required: true
@@ -212,6 +220,15 @@ jobs:
           token: ${{ secrets.PAT }}
           path: ./montrek/montrek/mt_llm
           ref: ${{ inputs.mt_llm_ref }}
+
+      - name: Clone mt_private
+        if: inputs.mt_private_repo != ''
+        uses: actions/checkout@v4
+        with:
+          repository: montrek-software/${{ inputs.mt_private_repo }}
+          token: ${{ secrets.PAT }}
+          path: ./montrek/montrek/${{ inputs.mt_private_repo }}
+          ref: ${{ inputs.mt_private_ref || 'main' }}
 
       - name: Checkout PR code or main
         uses: actions/checkout@v4
